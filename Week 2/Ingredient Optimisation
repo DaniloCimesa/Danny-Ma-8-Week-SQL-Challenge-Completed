@@ -1,0 +1,209 @@
+
+use [Danny Ma 8 Week 1-2 Challenge]
+
+--1. What are the standard ingredients for each pizza?
+
+
+--Sollution 1
+declare @toppings varchar(25)
+set @toppings = (select toppings from pizza_recipes 
+where pizza_id = (select pizza_id from pizza_names where convert (varchar(max), pizza_name)='Meatlovers'  ) )
+
+select topping_name as Meatlovers 
+from string_split (@toppings, ',') as ss
+join pizza_toppings t
+on ss.value=t.topping_id
+
+declare @toppings1 varchar(20)
+set @toppings1 = (select toppings from pizza_recipes 
+where pizza_id = (select pizza_id from pizza_names where convert (varchar(max), pizza_name)='Vegetarian'  ) )
+
+select topping_name as Vegetarian 
+from string_split (@toppings1, ',') as ss
+join pizza_toppings t
+on ss.value=t.topping_id
+
+--First you have to split the string of ingredients for each pizza. I did a left trim just to make it look a little better.
+with cte_a as (
+select convert(varchar(15), pizza_name) as Name, pr.pizza_id, ltrim (value) as Ingredients
+from pizza_recipes pr
+join pizza_names pn
+on pr.pizza_id=pn.pizza_id
+cross apply string_split(convert(varchar(30),toppings), ',')
+)
+--Then I used String aggregate function to join already divided string but not in form of their ID instead as their name.
+select Name, string_agg(convert(varchar(15), topping_name), ', ')
+from cte_a
+join pizza_toppings pt
+on cte_a.Ingredients=pt.topping_id
+group by Name
+
+--2. What was the most commonly added extra?
+
+--Split extras for different Order_ID.
+With Extras as (
+
+select order_id, ltrim(value) as Extras
+from customer_orders
+cross apply string_split (extras, ',')
+
+)
+--Find the extra which has the highest count.
+Select top 1 Extras as ExtrasID, count( Extras) as ExtrasCount
+from Extras
+group by Extras
+order by ExtrasCount desc
+
+--3. What was the most common exclusion?
+
+--Same as the extras but exclusions :'D
+with exclusions as (
+select order_id, ltrim(value) as Exclusions
+from customer_orders
+cross apply string_split (exclusions, ',')
+)
+
+select top 1 exclusions as exclusionId, count(exclusions) as ExclusionCount
+from exclusions
+group by Exclusions
+order by ExclusionCount desc
+
+
+--4. Generate an order item for each record in the customers_orders table in the format of one of the following:
+--Meat Lovers
+--Meat Lovers - Exclude Beef
+--Meat Lovers - Extra Bacon
+--Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers
+
+--Complex case statement but not that hard. 
+--When there is no extras or exclusion write pizza name. If there is any extras write pizza name + -extra and that topping.
+--If there is any exclusions write pizza name + -exclude and that topping.
+--If there are both extras and exclusions write pizza name with -extra and -exclusions.
+select order_id, p.pizza_id, pizza_name, extras, exclusions, 
+case 
+when extras is null and exclusions is null then pizza_name
+when extras ='1' and exclusions is null then convert(varchar(15),pizza_name)+ ' - Extra ' + (select convert(varchar(10),topping_name) from pizza_toppings where topping_id=1)
+when extras is null and exclusions='4' then convert(varchar(15),pizza_name)+ ' - Exclude ' + (select convert(varchar(10),topping_name) from pizza_toppings where topping_id=4)
+when extras = '1, 4' and exclusions='2, 6' then convert(varchar(15),pizza_name)+ ' - Extra ' + (select STRING_AGG (convert(varchar(20),topping_name), ', ') from pizza_toppings where topping_id in ('1','4'))
+	                                                                           + ' - Exclude '+ (select STRING_AGG (convert(varchar(20),topping_name), ', ') from pizza_toppings where topping_id in ('2','6'))
+when extras = '1, 5' and exclusions='4' then convert(varchar(15),pizza_name)+ ' - Extra ' + (select STRING_AGG (convert(varchar(20),topping_name), ', ') from pizza_toppings where topping_id in ('1','5'))
+	                                                                           + ' - Exclude '+ (select STRING_AGG (convert(varchar(20),topping_name), ', ') from pizza_toppings where topping_id in ('4'))
+
+else '' end as fullOrder
+from customer_orders c
+join pizza_names p
+on c.pizza_id=p.pizza_id
+
+--5. Generate an alphabetically ordered comma separated ingredient 
+--list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
+--For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"
+
+--You'll probably have to create temporary tables to solve last two problems in this excercise. 
+create table #customer_orders
+(order_id int,
+ customer_id int, 
+ pizza_id int, 
+ exclusions varchar(5),
+ extras varchar(5), 
+)
+
+insert into #customer_orders
+select order_id, customer_id, pizza_id, exclusions, extras
+from customer_orders
+
+alter table #customer_orders
+add record_id int identity (1,1)
+
+update #customer_orders
+set exclusions=' '
+where exclusions is null
+
+update #customer_orders
+set extras=' '
+where extras is null
+
+create table #extras 
+(record_id int, extras varchar(1))
+
+insert into #extras
+select record_id, ltrim(value) as Extras
+from #customer_orders
+cross apply string_split (extras, ',')
+
+
+create table #exclusions
+(record_id int, exclusions varchar(1))
+
+insert into #exclusions
+select record_id, ltrim(value) as Exclusions
+from #customer_orders
+cross apply string_split (exclusions, ',')
+
+create table #recipe 
+(pizza_id tinyint, topping varchar(2))
+
+insert into #recipe
+select pizza_id, ltrim(value) as Topping
+from pizza_recipes
+cross apply string_split(convert(varchar(30), toppings), ',')
+
+--sollution 
+
+--First in cte write a case if a certain topping is in extras then that topping should be double.
+--Also exclude toppings that are in exclusions.
+with cte_ing as (
+Select c.record_id, convert(varchar(15), pizza_name) as PizzaName, topping_name , case when topping_id in (select extras from #extras x where x.record_id=c.record_id) then '2x '
+                                                  else '' end as Extra
+from #customer_orders c
+join pizza_names pn
+on c.pizza_id=pn.pizza_id
+join #recipe r
+on pn.pizza_id=r.pizza_id
+join pizza_toppings t
+on r.topping=t.topping_id
+where t.topping_id not in (select exclusions from #exclusions ex where ex.record_id=c.record_id)
+)
+--Problem with this excercise is that all string values in tables are text type, so I had to convert them to varchar.
+--And at last use concat function to join pizza_name and ingredients. Ingredients are joined with case function from cte. 
+Select convert(varchar(2), C.record_id) as RecordId, 
+       convert(varchar(2), C.order_id) as OrderId, 
+       convert(varchar(3), c.customer_id) as CustomerId, 
+	   convert(varchar(4), c.exclusions) as Exclusions, 
+	   convert(varchar(4), c.extras) as Extras, 
+concat(i.pizzaname, ': ', string_agg(concat(i.extra,i.topping_name), ', ')) as IngList
+from #customer_orders c
+join cte_ing i
+on c.record_id=i.record_id
+group by 
+convert(varchar(2), C.record_id) , 
+convert(varchar(2), C.order_id) , 
+convert(varchar(3), c.customer_id) , 
+convert(varchar(4), c.exclusions) , 
+convert(varchar(4), c.extras) ,
+i.pizzaname
+
+--6. What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
+--In Cte join multiple tables to show which ingredients are used for which pizza order plus extras and exclusions.
+with cte_a as (
+select order_id, pizza_name, ex.exclusions, e.extras, topping, convert(varchar(15),topping_name) as Topping_Name
+from #customer_orders c
+join pizza_names pn
+on c.pizza_id=pn.pizza_id
+join #recipe r
+on c.pizza_id=r.pizza_id
+join #exclusions ex
+on c.record_id=ex.record_id
+join #extras e
+on c.record_id=e.record_id
+join pizza_toppings pt
+on r.topping=pt.topping_id
+)
+--Write a case statement where a topping id in exclusions then it is not used to create pizza in this order so 0,
+--if it is in extra then it is used twice so write 2 next to it and else just write 1. 
+--In the end sum this case statement, group it by topping name and set it in decreasing order. 
+select Topping_name, sum (case when topping in (exclusions) then 0 
+               when topping in (extras) then 2
+else 1 end) as Times_used
+from cte_a 
+group by Topping_name
+order by Times_used desc
