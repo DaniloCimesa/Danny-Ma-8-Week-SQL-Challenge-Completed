@@ -1,0 +1,151 @@
+
+--1. If a Meat Lovers pizza costs $12 and Vegetarian costs $10 and there were no charges for changes 
+-- - how much money has Pizza Runner made so far if there are no delivery fees?
+
+
+/* Creating simple case statement to write price next to specific pizza_id. And sum it to get total profit. 
+Not if you want to use sum case then you'll have to merge pizza name table to customer order 
+because you cannot sum case when there is a subquery in it. */
+with cte_a as (
+select pizza_id, 
+case when pizza_id=(select pizza_id from pizza_names where convert(varchar(15),pizza_name)='Meatlovers') then 12
+                                          else 10 end as [Price($)]
+from customer_orders c
+join runner_orders r
+on c.order_id=r.order_id
+where cancellation is null
+)
+
+select sum ([Price($)]) as MoneyCount
+from cte_a
+
+
+--2. What if there was an additional $1 charge for any pizza extras?
+--Add cheese is $1 extra
+
+create table #customer_orders
+(order_id int,
+ customer_id int, 
+ pizza_id int, 
+ exclusions varchar(5),
+ extras varchar(5), 
+)
+
+insert into #customer_orders
+select order_id, customer_id, pizza_id, exclusions, extras
+from customer_orders
+
+alter table #customer_orders
+add record_id int identity (1,1)
+
+update #customer_orders
+set exclusions=' '
+where exclusions is null
+
+update #customer_orders
+set extras=' '
+where extras is null
+
+/*You'll have to create temp table named #customer_orders to add new column named record_id to split pizzas within the same orders. 
+After that is simple to create case statement to write 1 if there is 1 extra on it, 2 if there are 2 or 0 if there are not any extras.  */
+
+with cte_a as (
+select record_id, extras, case when pizza_id=
+(select pizza_id from pizza_names where convert(varchar(15), pizza_name)='Meatlovers') then 12 else 10 end as PizzaPrice,
+case when Extras like '%,%' then 2 
+     when Extras = ' ' then 0
+else 1 end  as [Extra cost]
+from #customer_orders c
+join runner_orders r
+on c.order_id=r.order_id
+where cancellation is null 
+
+)
+Select sum(pizzaprice+[Extra cost]) as TotalCost
+from cte_a
+
+
+
+
+--3. The Pizza Runner team now wants to add an additional ratings system that allows customers to rate their runner, 
+--how would you design an additional table for this new dataset 
+--- generate a schema for this new table and insert your own data for ratings for each successful customer order between 1 to 5.
+
+--Creating a table for next assignment.
+
+create table runner_rating 
+(order_id int,
+ rating tinyint, 
+ comment varchar(200),
+ rating_time datetime)
+
+alter table runner_rating
+add constraint fk_order_id
+foreign key (order_id) references runner_orders(order_id)
+
+insert into runner_rating
+values
+(1, 5, 'Everything was perfect', '2020-01-01 20:00:00.000'),
+(2, 5, '', '2020-01-01 20:00:00.000'),
+(3, 2, 'Runner got lost', '2020-01-03 02:02:00.000'),
+(4, 4, 'Runner was a bit rude', '2020-01-04 16:25:12.000'),
+(5, 2, 'came late and food was cold', '2020-01-08 23:03:00.000'),
+(7, 5, 'came sooner than expected', '2020-01-08 22:55:00.000'),
+(8, 4, '', '2020-01-10 01:00:00.000'),
+(10, 4, '', '2020-01-11 20:00:00.000') 
+
+--4. Using your newly generated table - can you join all of the information together to form a table which has the following information for successful deliveries?
+--customer_id
+--order_id
+--runner_id
+--rating
+--order_time
+--pickup_time
+--Time between order and pickup
+--Delivery duration
+--Average speed
+--Total number of pizzas
+
+
+/*Just merging 3 tables one to another, with using datediff function to count difference between order and a pickup time,
+then dividing distance and duration of the delivery to get the speed in minute then multiplying it with 60 to get the speed in KM/H. 
+And it the end just counting the pickup times to get the number of pizzas per order.*/
+select customer_id, c.order_id, runner_id, rating, pickup_time, order_time,
+ DATEDIFF(minute, order_time, pickup_time) as [Time between order and pickup],
+duration as [Delivery Duration], format( convert(decimal (4,2), distance) / convert(int, duration) *60, 'N2') as [Average Speed],
+count(pickup_time) as [Delivered Pizzas]
+from customer_orders c
+join runner_orders r
+on c.order_id=r.order_id
+join runner_rating rr
+on c.order_id=rr.order_id
+group by customer_id, c.order_id, runner_id, rating, pickup_time, order_time, duration, distance
+
+/*5. If a Meat Lovers pizza was $12 and Vegetarian $10 fixed prices with no cost for extras 
+and each runner is paid $0.30 per kilometre traveled - how much money does Pizza Runner have left over after these deliveries?*/
+
+/* 
+Suming the prices of pizzas in the sum case statement (Note you can not sum if there is a subquery in case statement), 
+then multiplying distance with variable to get the amount runner is payed per delivery. 
+Suming it all after CTE table to get the full profit from pizzas, 
+the amount of money that goes to runners and subtracting these two values gives you the profit of pizza shop owner. 
+*/
+with cte_a as (
+select 
+c.order_id
+, sum( case when convert(varchar(20), pizza_name)='Meatlovers' then 12 else 10 end) as [Pizza Price]
+, convert(decimal(4,1), distance) * 0.3 as KilometerPaid
+from customer_orders c
+join runner_orders r
+on c.order_id=r.order_id
+join pizza_names pn
+on c.pizza_id=pn.pizza_id
+where cancellation is null
+group by c.order_id, distance
+)
+
+select 
+   sum ([Pizza Price]) as PizzaRevenue
+ , sum(KilometerPaid) as RunnerPay
+ , sum ([Pizza Price]) - sum(KilometerPaid) as Profit 
+from cte_a
