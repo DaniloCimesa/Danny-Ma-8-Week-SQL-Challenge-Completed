@@ -11,4 +11,4 @@ on s.plan_id=p.plan_id
 where customer_id in (1,2,13,15,16,18,19)
 
 
-[Slika 1] (https://github.com/DaniloCimesa/Danny-Ma-8-Week-SQL-Challenge/blob/cd1df5eaee0c967c55301cd048750f61dce05ada/Week%203/Capture1.PNG)
+
