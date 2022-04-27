@@ -1,0 +1,12 @@
+--Preparing data for customer_ids in a case study example. 
+
+select 
+customer_id
+, p.plan_name
+, start_date, datediff(day,lag(start_date) over (partition by customer_id order by start_date) ,start_date) as daydiff
+, start_date, datediff(month,lag(start_date) over (partition by customer_id order by start_date) ,start_date) as monthdiff
+from subscriptions s
+join plans p
+on s.plan_id=p.plan_id
+where customer_id in (1,2,13,15,16,18,19)
+
