@@ -10,3 +10,4 @@ join plans p
 on s.plan_id=p.plan_id
 where customer_id in (1,2,13,15,16,18,19)
 
+[Capture1]
