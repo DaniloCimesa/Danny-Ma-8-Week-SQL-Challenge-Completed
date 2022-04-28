@@ -1,3 +1,3 @@
 
 
-Link to the case study: https://8weeksqlchallenge.com/case-study-3/
+^-Program used was MS SQL Server Management Studio version 18.4-^
