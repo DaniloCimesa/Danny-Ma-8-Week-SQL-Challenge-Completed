@@ -1,0 +1,233 @@
+--1.How many customers has Foodie-Fi ever had?
+
+select count( distinct customer_id) as [Total Customers]
+from subscriptions
+
+
+/*2. What is the monthly distribution of trial plan start_date values for our dataset
+- use the start of the month as the group by value?*/
+
+select month(start_date) as Month, count(plan_id) as [Number of Trials]
+from subscriptions
+where plan_id = (Select plan_id from plans where plan_name='trial')
+group by month(start_date)
+
+/*3.What plan start_date values occur after the year 2020 for our dataset? 
+Show the breakdown by count of events for each plan_name*/
+
+select plan_name, count(plan_name) as [Event Count]
+from subscriptions s
+join plans p
+on s.plan_id=p.plan_id
+where year(start_date)>2020
+group by plan_name
+
+/*4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place?*/
+
+select count(customer_id) as CountOfChurnedCustomers, format((convert(decimal(4,1), count(customer_id)) / (Select count(distinct customer_id) from subscriptions)), 'P1') as PercentageOfChurnedCustomers
+from subscriptions
+where plan_id =(Select plan_id from plans where plan_name ='churn')
+
+--5.How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number?
+
+with cte_a as (
+
+select 
+customer_id
+, string_agg(plan_id, ', ') as PlanPath
+from subscriptions
+group by customer_id
+
+)
+Select count(*) as Total, floor(convert(decimal (3,0),count(*)) / (Select count(distinct customer_id) from subscriptions)*100) as Percentage
+from cte_a
+where PlanPath like ('0, 4')
+
+--6. What is the number and percentage of customer plans after their initial free trial?
+
+with cte_a as (
+select 
+customer_id
+, string_agg(plan_id, ', ') as PlanPath
+, case when string_agg(plan_id, ', ') like ('0, 1%') then (select plan_name from plans where plan_id=1) 
+       when string_agg(plan_id, ', ') like ('0, 2%') then (select plan_name from plans where plan_id=2) 
+	   when string_agg(plan_id, ', ') like ('0, 3%') then (select plan_name from plans where plan_id=3) 
+       else (select plan_name from plans where plan_id=4)  end as [Post Trial Plan]
+from subscriptions
+group by customer_id
+)
+Select [Post Trial Plan], count([Post Trial Plan]), 
+from cte_a
+group by [Post Trial Plan]
+
+
+--With Lead Function
+with cte_a as (
+Select 
+ customer_id
+, s.plan_id
+, start_date
+,case when s.plan_id=0 then lead (s.plan_id) over (partition by customer_id order by start_date) else null end as PostTrialPlan
+from subscriptions s
+
+)
+
+select 
+ plan_name
+, count(PostTrialPlan) as [Post Trial Plan Count]
+, format(convert(decimal(4,1), count(PostTrialPlan)) / (select count(distinct customer_id) from subscriptions)*100,'N2') as Percentage
+from cte_a
+join plans p
+on cte_a.posttrialplan=p.plan_id
+where PostTrialPlan is not null
+group by plan_name
+
+--7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
+
+with cte_a as (
+select 
+ customer_id
+ , plan_id
+ , start_date
+ ,rank () over(partition by customer_id order by start_date desc) as rankd
+from subscriptions
+where start_date<='2020-12-31' 
+)
+select 
+ plan_name
+, count(rankd) as total
+, format( convert(decimal(4,1), count(rankd)) / (select count( distinct customer_id) from subscriptions)*100, 'N2') as Percentage
+from cte_a
+join plans p
+on cte_a.plan_id=p.plan_id
+where rankd=1
+group by plan_name
+order by total desc
+
+--8. How many customers have upgraded to an annual plan in 2020?
+
+
+select 
+  plan_name
+ ,count(customer_id) as CountOfannual
+from subscriptions s
+join plans p
+on s.plan_id=p.plan_id
+where start_date <='2020-12-31'  and s.plan_id=3
+group by plan_name
+
+
+
+--9.How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
+
+with 
+ cte_b as (
+Select 
+  customer_id
+, min(start_date) as join_date 
+from subscriptions
+group by customer_id
+)
+, 
+ cte_c as (
+Select 
+  customer_id
+, start_date as AnnumDate
+from subscriptions
+where plan_id=3
+)
+Select convert(decimal(4,1), avg(datediff(day, join_date, annumdate)))
+from cte_b
+join cte_c 
+on cte_b.customer_id=cte_c.customer_id
+
+
+--My Way
+
+with cte_a as(
+select customer_id 
+from subscriptions
+group by customer_id
+having string_agg(plan_id, ', ') like '%3%'
+), 
+
+cte_b as (
+Select 
+  customer_id
+, start_date
+from subscriptions
+where plan_id=0 and customer_id in (Select customer_id from cte_a)
+)
+, 
+ cte_c as (
+Select 
+  customer_id
+, start_date as AnnumDate
+from subscriptions
+where plan_id=3 and customer_id in (Select customer_id from cte_a)
+)
+Select convert(decimal(4,1), avg(datediff(day, start_date, annumdate))) as  AverageNoDays
+from cte_b
+join cte_c 
+on cte_b.customer_id=cte_c.customer_id
+
+--10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
+
+with cte_a as(
+select customer_id 
+from subscriptions
+group by customer_id
+having string_agg(plan_id, ',' ) like '%3%'
+), 
+
+cte_b as (
+Select 
+  customer_id
+, start_date
+from subscriptions
+where plan_id=0 and customer_id in (Select customer_id from cte_a)
+)
+, 
+ cte_c as (
+Select 
+  customer_id
+, start_date as AnnumDate
+from subscriptions
+where plan_id=3 and customer_id in (Select customer_id from cte_a)
+)
+, cte_d as (
+Select 
+datediff(day, start_date, annumdate) as AverageNoDays
+, case when datediff(day, start_date, annumdate)<=30 then 1
+       when datediff(day, start_date, annumdate)<=60 then 2
+	   when datediff(day, start_date, annumdate)<=90 then 3
+	   when datediff(day, start_date, annumdate)<=120 then 4
+	   when datediff(day, start_date, annumdate)<=150 then 5
+	   when datediff(day, start_date, annumdate)<=180 then 6
+	   when datediff(day, start_date, annumdate)<=210 then 7
+	   when datediff(day, start_date, annumdate)<=240 then 8
+	   when datediff(day, start_date, annumdate)<=270 then 9
+	   when datediff(day, start_date, annumdate)<=300 then 10
+	   when datediff(day, start_date, annumdate)<=330 then 11
+	   else 12 end as GroupingOrder
+from cte_b
+join cte_c 
+on cte_b.customer_id=cte_c.customer_id
+)
+select GroupingOrder, count(groupingOrder) as NumberOfElements, AVG(AverageNoDays) as AverageNoDays
+from cte_d
+group by GroupingOrder
+order by GroupingOrder asc
+
+--11.How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
+
+with cte_a as (
+select 
+*
+, case when plan_id=2 and lead(plan_id) over (partition by customer_id  order by start_date) =1 then 1
+       else 0 end as downgrade
+from subscriptions
+)
+
+select sum(downgrade) as [Number Of Downgraded Subscriptions]
+from cte_a
