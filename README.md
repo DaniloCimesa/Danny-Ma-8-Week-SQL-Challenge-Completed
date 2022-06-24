@@ -9,3 +9,5 @@ Week 1: https://8weeksqlchallenge.com/case-study-1/
 Week 2: https://8weeksqlchallenge.com/case-study-2/
 
 Week 3: https://8weeksqlchallenge.com/case-study-3/
+
+Week 4: https://8weeksqlchallenge.com/case-study-4/
