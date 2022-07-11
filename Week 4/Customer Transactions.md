@@ -1,6 +1,6 @@
 
 ```
-__1.What is the unique count and total amount for each transaction type?__
+<b> 1.What is the unique count and total amount for each transaction type? </b>
 
 SELECT 
 	txn_type
