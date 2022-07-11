@@ -1,6 +1,6 @@
 
 ```
-**1.What is the unique count and total amount for each transaction type?**
+__1.What is the unique count and total amount for each transaction type?__
 
 SELECT 
 	txn_type
