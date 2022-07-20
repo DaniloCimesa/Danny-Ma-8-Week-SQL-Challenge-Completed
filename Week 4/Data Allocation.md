@@ -7,7 +7,7 @@ WITH CTE_A AS (
 SELECT 
 	*
 ,	CASE WHEN txn_type='deposit' THEN txn_amount
-								 ELSE -txn_amount END AS amountEdited
+				     ELSE -txn_amount END AS amountEdited
 
 FROM customer_transactions
 )
