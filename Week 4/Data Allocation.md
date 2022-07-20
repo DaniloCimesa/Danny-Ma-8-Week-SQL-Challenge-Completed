@@ -20,13 +20,13 @@ SELECT
 ,	SUM(amountEdited) OVER (PARTITION BY customer_id ORDER BY txn_date) running_balance
 FROM CTE_A
 ```
-Other way would be the longer one and ofcourse
+Other way would be the longer one and ofcourse, with using the ROW_NUMBER function to sort all the transactions for each customer by ascending date and after that sum each number with the previous one to create a running balance. 
 ```
 WITH CTE_A AS (
 SELECT 
 	*
 ,	CASE WHEN txn_type='deposit' THEN txn_amount
-								 ELSE -txn_amount END AS amountEdited
+				     ELSE -txn_amount END AS amountEdited
 
 FROM customer_transactions
 )
