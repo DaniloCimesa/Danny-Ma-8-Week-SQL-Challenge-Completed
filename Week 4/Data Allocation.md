@@ -103,3 +103,35 @@ SELECT
 FROM CTE_B
 GROUP BY customer_id
 ```
+
+Customer balance at the end of each month. Code for this is used from 4th assignment from Customer transactions.
+
+```
+WITH CTE_A AS (
+SELECT 
+	customer_id
+,	MONTH(txn_date) AS Month
+,	EOMONTH(txn_date) AS EoMonth
+,	CASE WHEN txn_type='deposit' THEN txn_amount
+				     ELSE -txn_amount END AS Balance
+FROM customer_transactions
+)
+, CTE_B AS (
+SELECT 
+	Customer_id
+,	Month
+,   EoMonth
+,	SUM(Balance) AS MonthlyChange
+FROM CTE_A
+GROUP BY Month, Customer_id, EOMONTH)
+
+SELECT 
+	Customer_id
+,	Month
+,	EOMONTH
+,	MonthlyChange
+,	SUM(MonthlyChange) OVER (PARTITION BY customer_id ORDER BY Month) AS MonthEndBalance	 
+FROM CTE_B
+GROUP BY Customer_id, Month, EOMONTH, MonthlyChange
+ORDER BY customer_id ASC
+```
