@@ -74,6 +74,9 @@ SELECT
 FROM CTE_C
 ```
 
+
+Minimum, average and maximum values of the running balance for each customer. The foundation for this query is pretty much the same as for the previous one, but with extra aggregate functions in the final select. 
+
 ```
 WITH CTE_A AS (
 SELECT 
@@ -92,15 +95,11 @@ SELECT
 ,	SUM(amountEdited) OVER (PARTITION BY customer_id ORDER BY txn_date) running_balance
 FROM CTE_A)
 
-, CTE_C AS (
 SELECT
 	customer_id
 ,	MIN(running_balance) AS MIN
 ,	MAX(running_balance) AS MAX
 ,	AVG(running_balance) AS AVG
 FROM CTE_B
-GROUP BY customer_id)
-
-SELECT *
-FROM CTE_C
+GROUP BY customer_id
 ```
