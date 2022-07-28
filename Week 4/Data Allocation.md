@@ -73,3 +73,34 @@ SELECT
 *
 FROM CTE_C
 ```
+
+```
+WITH CTE_A AS (
+SELECT 
+	*
+,	CASE WHEN txn_type='deposit' THEN txn_amount
+				     ELSE -txn_amount END AS amountEdited
+
+FROM customer_transactions
+)
+,	CTE_B AS (
+SELECT 
+	customer_id
+,	txn_date
+,	txn_type
+,	amountEdited
+,	SUM(amountEdited) OVER (PARTITION BY customer_id ORDER BY txn_date) running_balance
+FROM CTE_A)
+
+, CTE_C AS (
+SELECT
+	customer_id
+,	MIN(running_balance) AS MIN
+,	MAX(running_balance) AS MAX
+,	AVG(running_balance) AS AVG
+FROM CTE_B
+GROUP BY customer_id)
+
+SELECT *
+FROM CTE_C
+```
