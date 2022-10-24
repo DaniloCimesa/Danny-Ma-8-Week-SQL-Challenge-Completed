@@ -7,7 +7,7 @@ SELECT
 ,   DATENAME (weekday, WEEK_DATE)
 FROM clean_weekly_sales
 ORDER BY Week_Number ASC
-'''
+
 --2. What range of week numbers are missing from the dataset?
 
 WITH CTE_A AS (
