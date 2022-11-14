@@ -2,7 +2,7 @@
 
 SELECT 
   COUNT(DISTINCT (user_id)) AS UserNum
-FROm users
+FROM users
 
 --2. How many cookies does each user have on average?
 
