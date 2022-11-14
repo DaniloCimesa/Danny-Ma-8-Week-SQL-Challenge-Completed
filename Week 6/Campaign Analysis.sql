@@ -2,6 +2,7 @@
 
 SELECT 
     DISTINCT user_id
+,   visit_id    
 ,   MIN(event_time) AS DateEarly
 ,   SUM(CASE WHEN E.event_type=1 THEN 1 ELSE 0 END) AS PageViews
 ,   SUM(CASE WHEN E.event_type=2 THEN 1 ELSE 0 END) AS CartAdd
