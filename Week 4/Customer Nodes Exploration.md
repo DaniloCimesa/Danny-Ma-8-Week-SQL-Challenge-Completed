@@ -47,58 +47,72 @@ SELECT
 AVG(Summ)*1.0 AS AvgDate
 FROM cte_a
 
-
+'''
 5. What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
 
-WITH cte_a AS (
-
+with SourceTable as (
 SELECT 
 *
 , DATEDIFF(day, start_date, end_date) AS DIFF
-FROM customer_nodes
+FROM e4.customer_nodes
 WHERE end_date NOT LIKE '999%'
-)
-
+)	
 , Percent_cte AS (
 SELECT 
  *  
 , PERCENT_RANK () OVER (PARTITION BY region_id ORDER BY DIFF)*100 AS P
-FROM cte_a 
+, row_number () over (PARTITION BY region_id ORDER BY DIFF) as OrderOfRows
+FROM SourceTable) 
+, median_source as (
+select
+	region_id
+,	ceiling((count(*)*1.00/100)*50) as First_MemberOfMedian
+from SourceTable as A
+group by A.region_id
+union all
+select
+	region_id
+,	ceiling((count(*)*1.00/100)*50)+1 as Second_MemberOfMedian
+from SourceTable as A
+group by A.region_id
 )
-, Median AS (
-SELECT 
-  region_id
-, MIN(DIFF) AS MedianDays
-FROM percent_cte
-WHERE P>=50
-GROUP BY region_id
-),
-EightyPercent AS (
-SELECT 
-  region_id
-, MIN(DIFF) AS [80thPercentileDays]
-FROM percent_cte
-WHERE P>80
-GROUP BY region_id)
-, NinetyFifthPercent AS (
+,	median as (
+select 
+	a.region_id
+,	sum(diff)/2 as Median
+,	'P50' as P50
+from median_source as A
+inner join percent_cte as B
+on A.First_MemberOfMedian=B.OrderOfRows and A.region_id=B.region_id
+group by a.region_id
+)
+, Percentiles as (
+select
+	region_id
+,	ceiling((count(*)*1.00/100)*80) as Coll
+,	'P80' as P80
+from SourceTable as A
+group by A.region_id
+union all
+select
+	region_id
+,	ceiling((count(*)*1.00/100)*95) as Coll
+,	'P95' as P95
+from SourceTable as A
+group by A.region_id
 
-SELECT 
-  region_id
-, MIN(DIFF) AS [95thPercentileDays]
-FROM percent_cte
-WHERE P>95
-GROUP BY region_id)
+)
+Select 
+	A.region_id
+,	max(case when P50='P50' then Median end) [Median]
+,	max(case when P80 ='P80' then Diff end) [80thPercentile]
+,	max(case when P80 ='P95' then Diff end) [95thPercentile]
 
-SELECT 
-  region_name
-, MedianDays
-, [80thPercentileDays]
-, [95thPercentileDays]
-FROM Median M
-JOIN EightyPercent E
-ON M.region_id=E.region_id
-JOIN NinetyFifthPercent N
-ON M.region_id=N.region_id
-JOIN regions r
-ON M.region_id=r.region_id
-```
+from Percentiles as A
+inner join percent_cte as B
+on A.Coll=B.OrderOfRows and A.region_id=B.region_id
+inner join median as C
+on C.region_id=A.region_id
+group by a.region_id--, t2.p80
+order by region_id asc
+'''
