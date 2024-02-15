@@ -47,7 +47,7 @@ SELECT
 AVG(Summ)*1.0 AS AvgDate
 FROM cte_a
 
-'''
+```
 5. What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
 
 with SourceTable as (
@@ -115,4 +115,4 @@ inner join median as C
 on C.region_id=A.region_id
 group by a.region_id--, t2.p80
 order by region_id asc
-'''
+```
