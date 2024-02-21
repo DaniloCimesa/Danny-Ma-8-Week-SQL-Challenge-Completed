@@ -50,33 +50,83 @@ GROUP BY month1
 ```
 **4. What is the closing balance for each customer at the end of the month?**
 ```
-WITH CTE_A AS (
+--first of all selecting distinct customers id
+WITH distinct_customers AS (
+SELECT 
+	distinct customer_id
+FROM e4.customer_transactions
+)
+--then selecting distinct months
+,months as 
+(
+select 
+	distinct MONTH(txn_date) as months
+from e4.customer_transactions
+)
+--then using cross join because not all customers have transactions in each month
+, customer as (
+select 
+	customer_id
+,	months
+from distinct_customers 
+cross join months 
+)
+--then processing data, making anything other than deposit a transaction with a negative value 
+, 
+sum_transactions AS (
 SELECT 
 	customer_id
 ,	MONTH(txn_date) AS Month
 ,	EOMONTH(txn_date) AS EoMonth
 ,	CASE WHEN txn_type='deposit' THEN txn_amount
 								 ELSE -txn_amount END AS Balance
-FROM customer_transactions
+FROM e4.customer_transactions
+
 )
-, CTE_B AS (
-SELECT 
-	Customer_id
-,	Month
-,   EoMonth
-,	SUM(Balance) AS MonthlyChange
-FROM CTE_A
-GROUP BY Month, Customer_id, EOMONTH)
+--summing all the data by each month for each customer
+, cte_b as (
 
 SELECT 
 	Customer_id
 ,	Month
-,	EOMONTH
-,	MonthlyChange
-,	SUM(MonthlyChange) OVER (PARTITION BY customer_id ORDER BY Month) AS MonthEndBalance	 
-FROM CTE_B
-GROUP BY Customer_id, Month, EOMONTH, MonthlyChange
-ORDER BY customer_id ASC
+,	SUM(Balance) AS MonthlyChange
+FROM sum_transactions
+GROUP BY Month, Customer_id
+)
+,
+--processing data 
+sum as (
+
+select 
+	a.customer_id
+,	a.months
+, case when EOMONTH is null then DATEADD(MONTH, 1, lag(eomonth) over(partition by a.customer_id order by months)) else eomonth end as Eom
+,	case when b.Balance is null then 0 else balance end as B
+from customer as A
+full join sum_transactions as B
+on a.customer_id=b.customer_id and a.months=b.Month
+
+)
+--adding two columns, monthendsum (sum after each month) and monthbalance(sum of each month)
+, Cte_c as (
+select 
+	a.customer_id, months, eom, b
+, SUM(B) OVER (PARTITION BY a.customer_id ORDER BY Months) as  MonthEndSum
+, SUM(B) OVER (PARTITION BY a.customer_id, months ORDER BY Months) as MonthBalance 
+
+from sum as a
+full join cte_b as b
+on a.customer_id=b.customer_id and a.months=b.Month
+group by a.customer_id, months, eom, b, months
+)
+select 
+	customer_id
+	, months
+	, eom
+	, MonthEndSum
+	, MonthBalance
+from cte_c
+group by customer_id, months,eom, MonthBalance , MonthEndSum
 ```
 
 **5. What is the percentage of customers who increase their closing balance by more than 5%?**
