@@ -76,7 +76,7 @@ SELECT
 --, FORMAT (CASE WHEN Platform='Retail' THEN TOTAL 1.00/TOTAL ELSE NULL END, 'P2') AS RetailPercentage
 --, FORMAT(CASE WHEN Platform='Shopify' THEN TOTAL*1.00/TOTAL ELSE NULL END, 'P2') AS ShopifyPercentage
 ,   FORMAT (MAX(CASE WHEN platform= 'Retail' THEN TOTAL ELSE NULL END)* 1.00 / SUM(TOTAL), 'P2') AS RetailPercentage
-,   FORMAT (MAX(CASE WHEN platform= 'Shopify' THEN TOTAL ELSE NULL END)* 1.00 / SUM(TOTAL), 'P2' AS ShopifyPercentage
+,   FORMAT (MAX(CASE WHEN platform= 'Shopify' THEN TOTAL ELSE NULL END)* 1.00 / SUM(TOTAL), 'P2') AS ShopifyPercentage
 FROM TotalSale
 GROUP BY calendar_year, Month_number
 ORDER BY calendar_year ASC, MONTH_number ASC
