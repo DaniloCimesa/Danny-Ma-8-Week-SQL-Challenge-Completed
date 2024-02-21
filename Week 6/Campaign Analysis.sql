@@ -20,6 +20,6 @@ JOIN campaign_identifier CI
 ON event_time BETWEEN CI.start_date AND CI.end_date
 JOIN page_hierarchy P
 ON E.page_id=P.page_id
-GROUP BY user_id, visit_id, campagin_name
+GROUP BY user_id, visit_id, campaign_name
 ORDER BY user_id, visit_id
     
