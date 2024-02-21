@@ -88,7 +88,7 @@ SELECT
    DISTINCT (YEAR (week_date)) AS Year 
 ,  SUM(CONVERT (BIGINT, sales)) AS SUM
 ,  demographic
-FROM clean weekly sales 
+FROM clean_weekly_sales 
 GROUP BY YEAR(week_date), demographic
 )
 SELECT
