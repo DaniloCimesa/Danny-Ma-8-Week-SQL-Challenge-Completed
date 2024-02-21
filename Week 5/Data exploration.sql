@@ -4,7 +4,7 @@
 
 SELECT 
     *
-,   DATENAME (weekday, WEEK_DATE)
+,   DATENAME (weekday, WEEK_DATE) as WeekDay_Name
 FROM clean_weekly_sales
 ORDER BY Week_Number ASC
 
