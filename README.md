@@ -15,3 +15,5 @@ Week 4: https://8weeksqlchallenge.com/case-study-4/
 Week 5: https://8weeksqlchallenge.com/case-study-5/
 
 Week 6: https://8weeksqlchallenge.com/case-study-6/
+
+Week 7: https://8weeksqlchallenge.com/case-study-7/
