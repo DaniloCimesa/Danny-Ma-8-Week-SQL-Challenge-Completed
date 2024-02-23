@@ -33,7 +33,7 @@ group by c.product_name
 --3.What was the total discount amount for all products?
 
 select 
-	sum	(qty*b.price*a.discount*0.01) as Revenue_B4_Discount
+	sum	(qty*b.price*a.discount*0.01) as Revenue_after_Discount
 from e7.sales as a
 full join [E7].[product_prices] as b
 on a.prod_id=b.product_id
@@ -41,7 +41,7 @@ on a.prod_id=b.product_id
 --discount per product
 select 
 	c.product_name
-,	sum	(qty*b.price*a.discount*0.01) as Revenue_B4_Discount
+,	sum	(qty*b.price*a.discount*0.01) as Revenue_after_Discount
 from e7.sales as a
 full join [E7].[product_prices] as b
 on a.prod_id=b.product_id
