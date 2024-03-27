@@ -130,3 +130,23 @@ select
 ,format(SumSale*1.00/(select sum(sumsale) from cte_a),'P2') as sumAll
 from cte_a
 
+--9. What is the total transaction “penetration” for each product? 
+--(hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
+
+with Cte_a as (
+select --*
+	product_name
+,	count(prod_id) as NumberOfSales
+from [E7].[sales] as A
+full join [E7].[product_details] as B
+on A.prod_id=B.product_id
+group by product_name
+)
+select 
+	product_name
+,	format(NumberOfSales*1.00/(select count (distinct txn_id) from [E7].[sales] ),'p2') as Penetration
+from cte_a
+
+--10. What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
+
+--At the moment, I do  not know how to solve this... :/
