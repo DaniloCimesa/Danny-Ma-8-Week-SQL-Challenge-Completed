@@ -114,3 +114,19 @@ select
 ,format(SumSale*1.00/sum(sumsale) over(partition by category_name),'P2') as sumAll
 from cte_a
 
+--8. What is the percentage split of total revenue by category?
+
+with cte_a as (
+select 
+	category_name
+,	sum(qty*b.price) as sumSale
+from [E7].[sales] as A
+full join [E7].[product_details] as B
+on A.prod_id=b.product_id
+group by category_name
+)
+select 
+	*
+,format(SumSale*1.00/(select sum(sumsale) from cte_a),'P2') as sumAll
+from cte_a
+
