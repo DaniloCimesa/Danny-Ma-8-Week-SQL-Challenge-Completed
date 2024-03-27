@@ -54,3 +54,63 @@ from [E7].[sales] as A
 full join [E7].[product_details] as B
 on A.prod_id=b.product_id
 group by category_name
+
+
+--5. What is the top selling product for each category?
+
+
+with cte_a as (
+select 
+	category_name
+,	product_name
+,	sum(qty) as sumSale
+,	ROW_NUMBER() over(partition by category_name order by sum(qty) desc) as RN
+from [E7].[sales] as A
+full join [E7].[product_details] as B
+on A.prod_id=b.product_id
+group by category_name, product_name
+)
+select 
+	category_name
+,	product_name
+,	sumSale as NumberOfSales
+from cte_a
+where RN=1
+
+
+--6. What is the percentage split of revenue by product for each segment?
+
+
+with cte_a as (
+select 
+	segment_name
+,	product_name
+,	sum(qty*b.price) as sumSale
+from [E7].[sales] as A
+full join [E7].[product_details] as B
+on A.prod_id=b.product_id
+group by segment_name, product_name
+)
+select 
+	*
+,format(SumSale*1.00/sum(sumsale) over(partition by segment_name),'P2') as sumAll
+from cte_a
+
+--7. What is the percentage split of revenue by segment for each category?
+
+
+with cte_a as (
+select 
+	category_name
+,	segment_name
+,	sum(qty*b.price) as sumSale
+from [E7].[sales] as A
+full join [E7].[product_details] as B
+on A.prod_id=b.product_id
+group by category_name, segment_name
+)
+select 
+	*
+,format(SumSale*1.00/sum(sumsale) over(partition by category_name),'P2') as sumAll
+from cte_a
+
