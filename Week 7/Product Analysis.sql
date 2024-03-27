@@ -24,6 +24,7 @@ on A.prod_id=b.product_id
 group by segment_name
 order by sum_qty desc
 
+--3.What is the top selling product for each segment?
 with cte_a as (
 select 
 	segment_name
@@ -41,3 +42,15 @@ select
 ,	sumSale as NumberOfSales
 from cte_a
 where RN=1
+
+--4. What is the total quantity, revenue and discount for each category?
+
+select 
+	category_name
+,	sum(qty) as quantity
+,	sum(qty*a.price) as Rev
+,	sum(qty*b.price*discount*0.01) as Disc
+from [E7].[sales] as A
+full join [E7].[product_details] as B
+on A.prod_id=b.product_id
+group by category_name
