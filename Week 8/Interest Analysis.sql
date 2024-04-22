@@ -63,3 +63,25 @@ where interest_id in (
 SELECT interest_id
   FROM cte_a
   )
+
+
+--4. Does this decision make sense to remove these data points from a business perspective? 
+--Use an example where there are all 14 months present to a removed interest example for your arguments 
+--- think about what it means to have less months present from a segment perspective.
+
+with cte_a as (
+select 
+	interest_id
+from [E8].[interest_metrics]
+where interest_id is not null
+group by interest_id
+having count(distinct month_year)<14
+)
+SELECT
+  COUNT(*) AS removed_rows
+FROM e8.interest_metrics 
+where interest_id in (
+SELECT interest_id
+  FROM cte_a
+  )
+
