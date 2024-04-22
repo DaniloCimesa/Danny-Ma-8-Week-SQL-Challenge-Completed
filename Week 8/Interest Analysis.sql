@@ -85,3 +85,24 @@ SELECT interest_id
   FROM cte_a
   )
 
+
+--5.After removing these interests - how many unique interests are there for each month?
+--to be honest, im not quite sure what is wanted here, but I did what I thought is wanted from us, 
+--if you know what is really an assignment here, please solve it	
+with cte_a as (
+select 
+	interest_id
+from [E8].[interest_metrics]
+where interest_id is not null
+group by interest_id
+having count(distinct month_year)<14
+)
+SELECT
+	distinct _month
+,	count(distinct interest_id)
+FROM e8.interest_metrics 
+where interest_id not in (
+SELECT interest_id
+  FROM cte_a
+  )
+ group by _month
