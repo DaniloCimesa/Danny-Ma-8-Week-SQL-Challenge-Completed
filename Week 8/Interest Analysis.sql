@@ -43,3 +43,23 @@ select
 	*
 ,   Format((sum(numOfinterest) over (order by countOfM desc)*1.00/(Select sum(numOfinterest) from Cte_b)),'P2') as percentage
 from Cte_b;
+
+
+--3. If we were to remove all interest_id values which are lower
+--than the total_months value we found in the previous question - how many total data points would we be removing?
+
+with cte_a as (
+select 
+	interest_id
+from [E8].[interest_metrics]
+where interest_id is not null
+group by interest_id
+having count(distinct month_year)<6
+)
+SELECT
+  COUNT(*) AS removed_rows
+FROM e8.interest_metrics 
+where interest_id in (
+SELECT interest_id
+  FROM cte_a
+  )
