@@ -52,4 +52,23 @@ where month_year is not null
 group by interest_name
 order by avgR asc
 
+-- 3. Which 5 interests had the largest standard deviation in their percentile_ranking value?	
 
+with cte_a as (
+SELECT
+  a.interest_id
+  ,	b.interest_name
+  ,	STDEV(a.percentile_ranking) AS STDEV_PCR
+  ,	COUNT(*) AS record_count
+FROM e8.interest_metrics as a
+INNER JOIN e8.interest_map as b
+  ON a.interest_id = b.id
+WHERE a.month_year IS NOT NULL
+GROUP BY
+  a.interest_id,
+  b.interest_name
+)
+select top 5 interest_name
+from cte_a
+where STDEV_PCR is not null
+order by STDEV_PCR desc
