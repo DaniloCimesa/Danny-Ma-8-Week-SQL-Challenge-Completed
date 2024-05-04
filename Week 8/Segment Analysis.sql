@@ -72,3 +72,42 @@ select top 5 interest_name
 from cte_a
 where STDEV_PCR is not null
 order by STDEV_PCR desc
+
+
+
+--4. For the 5 interests found in the previous question - what was minimum and maximum percentile_ranking 
+--values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
+
+with cte_a as (
+SELECT
+  a.interest_id
+  ,	b.interest_name
+  ,	STDEV(a.percentile_ranking) AS STDEV_PCR
+  ,	COUNT(*) AS record_count
+FROM e8.interest_metrics as a
+INNER JOIN e8.interest_map as b
+  ON a.interest_id = b.id
+WHERE a.month_year IS NOT NULL
+GROUP BY
+  a.interest_id,
+  b.interest_name
+)
+,	interests as (
+select top 5 *	
+from cte_a as a
+order by STDEV_PCR desc
+)
+
+select-- *
+	interest_name
+,	convert(date, '01-'+month_year) as Month_year
+,	max(a.percentile_ranking) as MAX_PCR	
+,	min(a.percentile_ranking) as MIN_PCR
+
+from e8.interest_metrics as a
+full join e8.interest_map as b
+on a.interest_id=b.id
+where interest_id in (select interest_id from interests)
+group by interest_name, month_year
+order by interest_name asc, Month_year asc
+
