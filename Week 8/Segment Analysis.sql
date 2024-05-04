@@ -38,3 +38,18 @@ select
 ,	composition
 from output
 order by composition desc
+
+--2.Which 5 interests had the lowest average ranking value?
+
+select 
+top 5 interest_name
+,	avg(ranking*1.00) as avgR
+,	count(interest_name) as CountR
+from [E8].[interest_metrics] as a
+full join [E8].[interest_map] as b
+on a.interest_id=b.id
+where month_year is not null
+group by interest_name
+order by avgR asc
+
+
