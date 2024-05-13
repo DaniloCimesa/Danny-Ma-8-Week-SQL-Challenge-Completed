@@ -21,7 +21,7 @@ Week 7: https://8weeksqlchallenge.com/case-study-7/
 Week 8: https://8weeksqlchallenge.com/case-study-8/
 
 
-I started this challenge more than 2 years ago ( 11th of April 2022), and now on 5th of May 2024, I can say it is over ladies and gentleman. Meanwhile I went on a another career path, now I am Database Admin (started as an Intern in Petroleum engineering company) and I can say that doing this really changed my life. As it is finished now, I have my closure (yes I am that guy, i need to finish everything I start) and I can focus on other stuff.  
+I started this challenge more than 2 years ago ( 11th of April 2022), and now on 5th of May 2024, I can say that it is over ladies and gentleman. Meanwhile I've changed careers and as of now I am Database Admin (started as an Intern in Petroleum engineering company) and I can say that doing this challenge really changed my life. As it is finished now, I have my closure (yes I am that guy, i need to finish everything I start) and I can focus on other stuff.  
 
 Hope these sollutions are helpful to anyone who searches for them.
 
